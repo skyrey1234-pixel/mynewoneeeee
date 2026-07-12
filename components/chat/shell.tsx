@@ -17,6 +17,7 @@ import {
   useArtifact,
   useArtifactSelector,
 } from "@/hooks/use-artifact";
+import { useVoiceChat } from "@/hooks/use-voice-chat";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Artifact } from "./artifact";
@@ -55,8 +56,83 @@ export function ChatShell() {
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
   const { setArtifact } = useArtifact();
 
+  const handleTranscript = useCallback(
+    (text: string) => {
+      setInput(text);
+    },
+    [setInput]
+  );
+
+  const voiceModeRef = useRef(false);
+  const handleFinalTranscript = useCallback(
+    (text: string) => {
+      // In push-to-talk (voice mode off) the transcript just fills the
+      // composer and the user decides when to send. In hands-free voice mode
+      // we submit automatically once speech settles (the hook stops the mic
+      // itself before this fires).
+      if (!(voiceModeRef.current && text.trim())) {
+        return;
+      }
+      window.history.pushState(
+        {},
+        "",
+        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${chatId}`
+      );
+      sendMessage({
+        parts: [{ text, type: "text" }],
+        role: "user",
+      });
+      setInput("");
+    },
+    [chatId, sendMessage, setInput]
+  );
+
+  const voice = useVoiceChat({
+    onFinalTranscript: handleFinalTranscript,
+    onTranscript: handleTranscript,
+  });
+  voiceModeRef.current = voice.voiceMode;
+
   const stopRef = useRef(stop);
   stopRef.current = stop;
+
+  const handleToggleListening = useCallback(() => {
+    if (voice.isListening) {
+      voice.stopListening();
+    } else {
+      voice.startListening();
+    }
+  }, [voice]);
+
+  // Speak assistant replies aloud in voice mode, then re-open the mic so the
+  // conversation can continue hands-free.
+  const lastSpokenIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!voice.voiceMode || status !== "ready") {
+      return;
+    }
+    const last = messages.at(-1);
+    if (last?.role !== "assistant") {
+      return;
+    }
+    if (lastSpokenIdRef.current === last.id) {
+      return;
+    }
+    const text = (last.parts ?? [])
+      .filter((p) => p.type === "text")
+      .map((p) => p.text)
+      .join(" ")
+      .trim();
+    if (!text) {
+      return;
+    }
+    lastSpokenIdRef.current = last.id;
+    voice.speak(text, () => {
+      if (voiceModeRef.current) {
+        voice.startListening();
+      }
+    });
+  }, [messages, status, voice]);
 
   const prevChatIdRef = useRef(chatId);
   useEffect(() => {
@@ -66,8 +142,11 @@ export function ChatShell() {
       setArtifact(initialArtifactData);
       setEditingMessage(null);
       setAttachments([]);
+      voice.stopListening();
+      voice.cancelSpeech();
+      lastSpokenIdRef.current = null;
     }
-  }, [chatId, setArtifact]);
+  }, [chatId, setArtifact, voice]);
 
   const handleEditMessage = useCallback(
     (msg: ChatMessage) => {
@@ -162,6 +241,12 @@ export function ChatShell() {
                   setMessages={setMessages}
                   status={status}
                   stop={stop}
+                  voiceIsListening={voice.isListening}
+                  voiceIsSpeaking={voice.isSpeaking}
+                  voiceMode={voice.voiceMode}
+                  voiceOnToggleListening={handleToggleListening}
+                  voiceOnToggleMode={voice.toggleVoiceMode}
+                  voiceSupported={voice.isSupported}
                 />
               )}
             </div>
