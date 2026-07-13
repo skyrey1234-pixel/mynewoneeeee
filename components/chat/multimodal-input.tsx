@@ -5,9 +5,13 @@ import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
 import {
   ArrowUpIcon,
+  AudioLinesIcon,
   BrainIcon,
   EyeIcon,
   LockIcon,
+  MicIcon,
+  Volume2Icon,
+  VolumeXIcon,
   WrenchIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -88,6 +92,12 @@ function PureMultimodalInput({
   editingMessage,
   onCancelEdit,
   isLoading,
+  voiceSupported,
+  voiceMode,
+  voiceIsListening,
+  voiceIsSpeaking,
+  voiceOnToggleListening,
+  voiceOnToggleMode,
 }: {
   chatId: string;
   input: string;
@@ -108,6 +118,12 @@ function PureMultimodalInput({
   editingMessage?: ChatMessage | null;
   onCancelEdit?: () => void;
   isLoading?: boolean;
+  voiceSupported?: boolean;
+  voiceMode?: boolean;
+  voiceIsListening?: boolean;
+  voiceIsSpeaking?: boolean;
+  voiceOnToggleListening?: () => void;
+  voiceOnToggleMode?: () => void;
 }) {
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
@@ -550,6 +566,19 @@ function PureMultimodalInput({
               selectedModelId={selectedModelId}
               status={status}
             />
+            {voiceSupported ? (
+              <>
+                <VoiceDictationButton
+                  isListening={voiceIsListening ?? false}
+                  onToggle={voiceOnToggleListening}
+                />
+                <VoiceModeButton
+                  isSpeaking={voiceIsSpeaking ?? false}
+                  onToggle={voiceOnToggleMode}
+                  voiceMode={voiceMode ?? false}
+                />
+              </>
+            ) : null}
             <ModelSelectorCompact
               onModelChange={onModelChange}
               selectedModelId={selectedModelId}
@@ -607,10 +636,118 @@ export const MultimodalInput = memo(
     if (prevProps.messages.length !== nextProps.messages.length) {
       return false;
     }
+    if (prevProps.voiceSupported !== nextProps.voiceSupported) {
+      return false;
+    }
+    if (prevProps.voiceMode !== nextProps.voiceMode) {
+      return false;
+    }
+    if (prevProps.voiceIsListening !== nextProps.voiceIsListening) {
+      return false;
+    }
+    if (prevProps.voiceIsSpeaking !== nextProps.voiceIsSpeaking) {
+      return false;
+    }
 
     return true;
   }
 );
+
+function PureVoiceDictationButton({
+  isListening,
+  onToggle,
+}: {
+  isListening: boolean;
+  onToggle?: () => void;
+}) {
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      onToggle?.();
+    },
+    [onToggle]
+  );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className={cn(
+            "h-7 w-7 rounded-lg border border-border/40 p-1 transition-colors",
+            isListening
+              ? "border-red-500/60 bg-red-500/10 text-red-500 hover:text-red-500"
+              : "text-muted-foreground/60 hover:border-border hover:text-foreground"
+          )}
+          data-testid="voice-dictation-button"
+          onClick={handleClick}
+          variant="ghost"
+        >
+          {isListening ? (
+            <AudioLinesIcon className="size-3.5 animate-pulse" />
+          ) : (
+            <MicIcon className="size-3.5" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={8}>
+        {isListening ? "Stop dictation" : "Dictate a message"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+const VoiceDictationButton = memo(PureVoiceDictationButton);
+
+function PureVoiceModeButton({
+  voiceMode,
+  isSpeaking,
+  onToggle,
+}: {
+  voiceMode: boolean;
+  isSpeaking: boolean;
+  onToggle?: () => void;
+}) {
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      onToggle?.();
+    },
+    [onToggle]
+  );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className={cn(
+            "h-7 w-7 rounded-lg border border-border/40 p-1 transition-colors",
+            voiceMode
+              ? "border-primary/60 bg-primary/10 text-primary hover:text-primary"
+              : "text-muted-foreground/60 hover:border-border hover:text-foreground"
+          )}
+          data-testid="voice-mode-button"
+          onClick={handleClick}
+          variant="ghost"
+        >
+          {voiceMode ? (
+            <Volume2Icon
+              className={cn("size-3.5", isSpeaking && "animate-pulse")}
+            />
+          ) : (
+            <VolumeXIcon className="size-3.5" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={8}>
+        {voiceMode
+          ? "Hands-free voice mode on — replies are spoken aloud"
+          : "Turn on hands-free voice mode"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+const VoiceModeButton = memo(PureVoiceModeButton);
 
 function PureAttachmentPreviewItem({
   attachment,
