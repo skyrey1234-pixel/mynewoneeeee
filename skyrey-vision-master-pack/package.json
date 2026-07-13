@@ -1,0 +1,9 @@
+{
+  "name": "skyrey-vision-master-pack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Strategy, prompts, structured data, and a starter website for the Skyrey creative universe.",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory site"
+  }
+}

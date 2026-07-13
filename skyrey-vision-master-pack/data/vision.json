@@ -1,0 +1,44 @@
+{
+  "brand": "Skyrey",
+  "parentCompanyOptions": ["RT Global", "Ray Trinidad Global", "Skyrey Global"],
+  "tagline": "One universe. Multiple entrances.",
+  "album": "Jud Is Us",
+  "flywheel": [
+    "Music creates attention",
+    "Streaming creates connection",
+    "AI creates revenue and ownership",
+    "Fashion creates culture",
+    "Stories create legacy"
+  ],
+  "phases": [
+    {
+      "id": 1,
+      "name": "Jud Is Us",
+      "focus": "TikTok, dance, rave culture, clubs, DJs, silent discos, festivals"
+    },
+    {
+      "id": 2,
+      "name": "Interviews and Streaming",
+      "focus": "Reveal the full identity and build community"
+    },
+    {
+      "id": 3,
+      "name": "AI Revenue Engine",
+      "focus": "SaaS, enterprise software, consulting, licensing, custom applications"
+    },
+    {
+      "id": 4,
+      "name": "Designer Fashion",
+      "focus": "A legitimate fashion label with New York expansion"
+    },
+    {
+      "id": 5,
+      "name": "Nine of Them",
+      "focus": "Novel, immersive audio, film, television, animation, and franchise IP"
+    }
+  ],
+  "aiProducts": [
+    "Artist Identity Music Engine",
+    "Halftime AI Coach"
+  ]
+}
