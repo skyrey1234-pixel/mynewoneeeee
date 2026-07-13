@@ -16,7 +16,8 @@
       "!components/elements",
       "!components/ui",
       "!lib/utils.ts",
-      "!hooks/use-mobile.ts"
+      "!hooks/use-mobile.ts",
+      "!skyrey-vision-master-pack"
     ]
   },
   "linter": {
